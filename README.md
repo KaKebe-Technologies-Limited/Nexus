@@ -40,6 +40,7 @@ docker-compose exec backend python manage.py createsuperuser
 ```
 
 6. Access the application
+- Frontend: http://localhost:3000
 - Backend: http://localhost:8000
 - Admin: http://localhost:8000/admin
 
