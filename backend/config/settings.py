@@ -27,21 +27,37 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure--f_=-(hb8eky^ldxh4u$o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
-INSTALLED_APPS = [
+SHARED_APPS = [
+    'django_tenants',  # mandatory
+    'tenants',         # our app for managing tenants
+    'corsheaders',     # For Cross-Origin Resource Sharing
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework', # Add rest_framework to shared apps
+    'api',            # Add api to shared apps
 ]
 
+TENANT_APPS = [
+    # Apps that are tenant-specific
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    # Add tenant-specific apps here
+]
+
+INSTALLED_APPS = list(set(SHARED_APPS + TENANT_APPS))
+
 MIDDLEWARE = [
+    'django_tenants.middleware.main.TenantMainMiddleware', # mandatory, keep at the top
+    "corsheaders.middleware.CorsMiddleware",                # Should be as high as possible
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,16 +87,36 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly'
+    ]
+}
+
+# Change in production
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "https://your-frontend-domain.com",
+]
+
+DATABASE_ROUTERS = (
+    'django_tenants.routers.TenantSyncRouter',
+)
+
+TENANT_MODEL = 'tenants.Client'
+TENANT_DOMAIN_MODEL = 'tenants.Domain'
+SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='iwalu_db'),
-        'USER': config('DB_USER', default='iwalu_user'),
-        'PASSWORD': config('DB_PASSWORD', default='iwalu_pass'),
+        'ENGINE': 'django_tenants.postgresql_backend', # mandatory
+        'NAME': config('DB_NAME', default='nexus_db'),
+        'USER': config('DB_USER', default='nexus_user'),
+        'PASSWORD': config('DB_PASSWORD', default='nexus_pass'),
         'HOST': config('DB_HOST', default='db'),
         'PORT': config('DB_PORT', default='5432'),
     }
@@ -108,7 +144,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-gb'
+LANGUAGE_CODE = 'en-ug'
 
 TIME_ZONE = 'Africa/Nairobi'
 

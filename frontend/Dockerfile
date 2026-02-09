@@ -9,6 +9,7 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
+# Expose port
 EXPOSE 3000
 
 # Start the development server

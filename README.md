@@ -1,6 +1,6 @@
-python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'# Iwalu ERP
+# Nexus ERP
 
-Multi-tenant, offline-first ERP system for fuel stations.
+Multi-tenant, offline-first ERP system for various kinds of enterprises.
 
 ## Setup
 
@@ -13,15 +13,18 @@ Multi-tenant, offline-first ERP system for fuel stations.
 1. Clone the repository
 ```bash
 git clone <your-repo-url>
-cd iwalu-erp
+cd nexus-erp
 ```
 
 2. Create environment file
 ```bash
 cp .env.example .env
 # Edit .env and add your secret key
-# You can generate a secret key by running this command, copying the secret key to the .env file
-docker-compose run --rm backend python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+cp ./frontend/.env.local.example ./frontend/.env.local
+# Edit .env.local and add the correct backend API URL
+
+# P.S: If you have python and django installed globally, you can generate a secret key by running this command, copying the secret key to the .env file:
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
 3. Start Docker containers
@@ -61,7 +64,7 @@ docker-compose exec backend python manage.py shell
 ### Database
 ```bash
 # Access PostgreSQL
-docker-compose exec db psql -U iwalu_user -d iwalu_db
+docker-compose exec db psql -U nexus_user -d nexus_db
 ```
 
 ### Logs
