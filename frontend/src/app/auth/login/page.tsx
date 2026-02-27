@@ -1,16 +1,40 @@
 "use client";
 
-import { AuthForm } from "../../../../components/auth/AuthForm";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AuthForm } from "@/components/auth/AuthForm";
+import { apiClient } from "@/lib/api";
+import { useAuthStore } from "@/lib/store/auth";
 
 export default function LoginPage() {
-  const handleLogin = async (data: any) => {
-    // Backend dev will implement this
-    console.log("Login data:", data);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleLogin = async (data: { email: string; password: string }) => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const tokens = await apiClient("/auth/login/", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      useAuthStore.getState().setTokens(tokens.access, tokens.refresh);
+
+      const user = await apiClient("/auth/me/");
+      useAuthStore.getState().setUser(user);
+
+      router.push("/dashboard");
+    } catch {
+      setError("Invalid email or password. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider: "google" | "apple") => {
-    // Backend dev will implement this
+    // TODO: implement social login
     console.log("Social login:", provider);
   };
 
@@ -45,18 +69,26 @@ export default function LoginPage() {
           Log in to your account
         </h1>
         <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/auth/register" className="text-primary hover:underline">
             Sign up
           </Link>
         </p>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {/* Login Form */}
       <AuthForm
         mode="login"
         onSubmit={handleLogin}
         onSocialLogin={handleSocialLogin}
+        isLoading={isLoading}
       />
 
       {/* Forgot Password Link */}
