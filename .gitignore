@@ -242,5 +242,4 @@ dist/
 *.sqlite3
 
 # Miscellaneous
-*.pdf
 *.tar.gz

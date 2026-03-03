@@ -29,4 +29,4 @@ npm run type-check
 ```
 
 ## Standards
-Refer yo Frontend Standards (Next.js) in @../CLAUDE.md
+Refer to Frontend Standards (Next.js) in @../CLAUDE.md
