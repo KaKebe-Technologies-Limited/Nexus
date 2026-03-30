@@ -54,8 +54,8 @@ class JournalEntryLineSerializer(serializers.ModelSerializer):
 class JournalEntryLineCreateSerializer(serializers.Serializer):
     account_id = serializers.IntegerField()
     description = serializers.CharField(required=False, default='')
-    debit = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
-    credit = serializers.DecimalField(max_digits=12, decimal_places=2, default=0)
+    debit = serializers.DecimalField(max_digits=12, decimal_places=2, default=0, min_value=0)
+    credit = serializers.DecimalField(max_digits=12, decimal_places=2, default=0, min_value=0)
     outlet_id = serializers.IntegerField(required=False, allow_null=True)
 
 

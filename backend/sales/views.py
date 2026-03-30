@@ -182,7 +182,11 @@ class SaleViewSet(viewsets.ReadOnlyModelViewSet):
                 from finance.services import create_sale_void_journal_entry
                 create_sale_void_journal_entry(sale, request.user.pk)
             except Exception:
-                pass  # Don't fail the void if JE reversal fails
+                import logging
+                logging.getLogger(__name__).error(
+                    'Failed to void journal entry for sale %s',
+                    sale.receipt_number, exc_info=True,
+                )
 
         return Response(SaleSerializer(sale).data)
 

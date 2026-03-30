@@ -255,6 +255,10 @@ def approve_payroll(payroll_period, approver_id):
         raise ValidationError(
             {'status': f'Cannot approve a {payroll_period.status} payroll.'}
         )
+    if payroll_period.processed_by == approver_id:
+        raise ValidationError(
+            {'approver': 'The approver must be different from the processor.'}
+        )
 
     with transaction.atomic():
         # Calculate NSSF employer total

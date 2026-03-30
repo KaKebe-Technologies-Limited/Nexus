@@ -143,7 +143,11 @@ def receive_purchase_order(po, items_received, user_id):
             from finance.services import create_purchase_journal_entry
             create_purchase_journal_entry(po, total_cost, user_id)
         except Exception:
-            pass  # Don't fail the receive if JE creation fails
+            import logging
+            logging.getLogger(__name__).error(
+                'Failed to create journal entry for PO %s',
+                po.po_number, exc_info=True,
+            )
 
     po.refresh_from_db()
     return po

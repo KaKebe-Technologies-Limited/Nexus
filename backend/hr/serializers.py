@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from .models import (
     Department, Employee, LeaveType, LeaveBalance,
@@ -40,7 +41,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'emergency_contact_name', 'emergency_contact_phone',
             'notes', 'created_at', 'updated_at',
         ]
-        read_only_fields = ['employee_number', 'created_at', 'updated_at']
+        read_only_fields = ['employee_number', 'user_id', 'employment_status', 'created_at', 'updated_at']
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
@@ -111,7 +112,7 @@ class LeaveRequestCreateSerializer(serializers.Serializer):
     leave_type = serializers.IntegerField()
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    days_requested = serializers.DecimalField(max_digits=5, decimal_places=1)
+    days_requested = serializers.DecimalField(max_digits=5, decimal_places=1, min_value=Decimal('0.5'))
     reason = serializers.CharField(required=False, default='')
 
 

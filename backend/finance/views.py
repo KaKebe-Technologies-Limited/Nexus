@@ -71,6 +71,24 @@ class FiscalPeriodViewSet(viewsets.ModelViewSet):
             return [IsAccountantOrAbove()]
         return [IsAuthenticated()]
 
+    def update(self, request, *args, **kwargs):
+        period = self.get_object()
+        if period.is_closed:
+            return Response(
+                {'error': 'Cannot modify a closed fiscal period.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        period = self.get_object()
+        if period.is_closed:
+            return Response(
+                {'error': 'Cannot delete a closed fiscal period.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'])
     def close(self, request, pk=None):
         period = self.get_object()
@@ -174,24 +192,45 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
 
 # --- Financial report views ---
 
+def _parse_date(value):
+    """Parse a date string, returning None on invalid input."""
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except (ValueError, TypeError):
+        return 'invalid'
+
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAccountantOrAbove])
 def trial_balance_view(request):
-    as_of = request.query_params.get('as_of_date')
-    as_of_date = date.fromisoformat(as_of) if as_of else None
+    as_of_date = _parse_date(request.query_params.get('as_of_date'))
+    if as_of_date == 'invalid':
+        return Response(
+            {'error': 'Invalid date format. Use YYYY-MM-DD.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     outlet = request.query_params.get('outlet')
     data = services.get_trial_balance(as_of_date=as_of_date, outlet=outlet)
     return Response(data)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAccountantOrAbove])
 def profit_loss_view(request):
     date_from = request.query_params.get('date_from')
     date_to = request.query_params.get('date_to')
     if not date_from or not date_to:
         return Response(
             {'error': 'date_from and date_to are required.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    parsed_from = _parse_date(date_from)
+    parsed_to = _parse_date(date_to)
+    if parsed_from == 'invalid' or parsed_to == 'invalid':
+        return Response(
+            {'error': 'Invalid date format. Use YYYY-MM-DD.'},
             status=status.HTTP_400_BAD_REQUEST,
         )
     outlet = request.query_params.get('outlet')
@@ -202,18 +241,24 @@ def profit_loss_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAccountantOrAbove])
 def balance_sheet_view(request):
-    as_of = request.query_params.get('as_of_date')
-    as_of_date = date.fromisoformat(as_of) if as_of else None
+    as_of_date = _parse_date(request.query_params.get('as_of_date'))
+    if as_of_date == 'invalid':
+        return Response(
+            {'error': 'Invalid date format. Use YYYY-MM-DD.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     outlet = request.query_params.get('outlet')
     data = services.get_balance_sheet(as_of_date=as_of_date, outlet=outlet)
     return Response(data)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAccountantOrAbove])
 def account_ledger_view(request, pk):
+    from django.shortcuts import get_object_or_404
+    get_object_or_404(Account, pk=pk)
     date_from = request.query_params.get('date_from')
     date_to = request.query_params.get('date_to')
     data = services.get_account_ledger(

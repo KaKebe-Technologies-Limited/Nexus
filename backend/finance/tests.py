@@ -200,7 +200,7 @@ class JournalEntryAPITest(FinanceTestBase):
 
 class FinancialReportsTest(FinanceTestBase):
     def test_trial_balance(self):
-        self._auth(self.admin)
+        self._auth(self.accountant)
         cash = Account.objects.get(code='1000')
         revenue = Account.objects.get(code='4000')
         services.create_journal_entry(
@@ -218,7 +218,7 @@ class FinancialReportsTest(FinanceTestBase):
         self.assertIsInstance(response.json(), list)
 
     def test_profit_loss(self):
-        self._auth(self.admin)
+        self._auth(self.accountant)
         today = timezone.now().date()
         response = self.client.get(
             f'/api/finance/profit-loss/?date_from={today}&date_to={today}'
@@ -227,7 +227,12 @@ class FinancialReportsTest(FinanceTestBase):
         self.assertIn('net_income', response.json())
 
     def test_balance_sheet(self):
-        self._auth(self.admin)
+        self._auth(self.accountant)
         response = self.client.get('/api/finance/balance-sheet/')
         self.assertEqual(response.status_code, 200)
         self.assertIn('total_assets', response.json())
+
+    def test_cashier_cannot_access_reports(self):
+        self._auth(self.cashier)
+        response = self.client.get('/api/finance/trial-balance/')
+        self.assertEqual(response.status_code, 403)

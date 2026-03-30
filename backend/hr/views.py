@@ -21,6 +21,24 @@ from .serializers import (
 from . import services
 
 
+def _get_employee_or_none(user):
+    """Get the Employee record for a user, or None."""
+    try:
+        return Employee.objects.get(user_id=user.pk)
+    except Employee.DoesNotExist:
+        return None
+
+
+def _scope_to_own_records(qs, request, employee_field='employee'):
+    """Non-admin/manager users only see their own records."""
+    if request.user.role in ('admin', 'manager'):
+        return qs
+    emp = _get_employee_or_none(request.user)
+    if emp is None:
+        return qs.none()
+    return qs.filter(**{employee_field: emp})
+
+
 class DepartmentViewSet(viewsets.ModelViewSet):
     queryset = Department.objects.select_related('outlet').all()
     serializer_class = DepartmentSerializer
@@ -63,6 +81,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Non-admin/manager users can only see their own record
+        if self.request.user.role not in ('admin', 'manager'):
+            qs = qs.filter(user_id=self.request.user.pk)
         dept = self.request.query_params.get('department')
         if dept:
             qs = qs.filter(department_id=dept)
@@ -85,7 +106,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrManager])
     def terminate(self, request, pk=None):
         from django.utils import timezone
         employee = self.get_object()
@@ -119,6 +140,7 @@ class LeaveBalanceViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = _scope_to_own_records(qs, self.request)
         employee = self.request.query_params.get('employee')
         if employee:
             qs = qs.filter(employee_id=employee)
@@ -143,6 +165,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = _scope_to_own_records(qs, self.request)
         employee = self.request.query_params.get('employee')
         if employee:
             qs = qs.filter(employee_id=employee)
@@ -178,18 +201,14 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrManager])
     def approve(self, request, pk=None):
-        self.permission_classes = [IsAdminOrManager]
-        self.check_permissions(request)
         leave_request = self.get_object()
         services.approve_leave(leave_request, request.user.pk)
         return Response(LeaveRequestSerializer(leave_request).data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminOrManager])
     def reject(self, request, pk=None):
-        self.permission_classes = [IsAdminOrManager]
-        self.check_permissions(request)
         leave_request = self.get_object()
         reason = request.data.get('reason', '')
         services.reject_leave(leave_request, request.user.pk, reason)
@@ -198,7 +217,6 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         leave_request = self.get_object()
-        # Only the employee who submitted can cancel, and only if pending
         try:
             employee = Employee.objects.get(user_id=request.user.pk)
         except Employee.DoesNotExist:
@@ -230,6 +248,7 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        qs = _scope_to_own_records(qs, self.request)
         employee = self.request.query_params.get('employee')
         if employee:
             qs = qs.filter(employee_id=employee)
@@ -300,18 +319,12 @@ class AttendanceViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PayrollPeriodViewSet(viewsets.ModelViewSet):
     queryset = PayrollPeriod.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrManager]
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return PayrollPeriodDetailSerializer
         return PayrollPeriodSerializer
-
-    def get_permissions(self):
-        if self.action in ('create', 'update', 'partial_update', 'destroy',
-                           'process', 'approve'):
-            return [IsAdminOrManager()]
-        return [IsAuthenticated()]
 
     @action(detail=True, methods=['post'])
     def process(self, request, pk=None):
@@ -335,6 +348,8 @@ class PaySlipViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Non-admin/manager only see their own pay slips
+        qs = _scope_to_own_records(qs, self.request)
         employee = self.request.query_params.get('employee')
         if employee:
             qs = qs.filter(employee_id=employee)

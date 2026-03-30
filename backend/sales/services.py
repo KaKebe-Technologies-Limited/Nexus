@@ -1,7 +1,10 @@
+import logging
 from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 from products.models import Product
 from .models import Discount, Sale, SaleItem, Payment
@@ -209,6 +212,9 @@ def process_checkout(shift, cashier_id, items_data, payments_data,
             from finance.services import create_sale_journal_entry
             create_sale_journal_entry(sale)
         except Exception:
-            pass  # Don't fail the sale if JE creation fails (e.g. no chart of accounts)
+            logger.error(
+                'Failed to create journal entry for sale %s',
+                sale.receipt_number, exc_info=True,
+            )
 
         return sale

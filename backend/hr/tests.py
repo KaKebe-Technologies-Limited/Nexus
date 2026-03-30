@@ -186,7 +186,7 @@ class PayrollTest(HRTestBase):
             end_date='2026-03-31',
         )
 
-        # Process
+        # Process (as admin)
         self._auth(self.admin)
         response = self.client.post(f'/api/payroll-periods/{period.pk}/process/')
         self.assertEqual(response.status_code, 200)
@@ -195,9 +195,23 @@ class PayrollTest(HRTestBase):
         self.assertEqual(data['pay_slips_count'], 1)
         self.assertGreater(Decimal(data['total_net']), 0)
 
-        # Approve (creates journal entry)
+        # Approve must be by a different user (separation of duties)
+        self._auth(self.manager)
         response = self.client.post(f'/api/payroll-periods/{period.pk}/approve/')
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data['status'], 'approved')
         self.assertIsNotNone(data['journal_entry'])
+
+    def test_same_user_cannot_process_and_approve_payroll(self):
+        self._create_employee(self.cashier, salary=Decimal('800000'))
+        period = PayrollPeriod.objects.create(
+            name='April 2026',
+            start_date='2026-04-01',
+            end_date='2026-04-30',
+        )
+        self._auth(self.admin)
+        self.client.post(f'/api/payroll-periods/{period.pk}/process/')
+        # Same user tries to approve — should fail
+        response = self.client.post(f'/api/payroll-periods/{period.pk}/approve/')
+        self.assertEqual(response.status_code, 400)
