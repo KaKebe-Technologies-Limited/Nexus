@@ -59,7 +59,7 @@ backend/
 ```bash
 # All commands from project root (where docker-compose.yml lives)
 docker compose exec backend python manage.py makemigrations
-docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py migrate_schemas  # NOT migrate (routes shared/tenant apps correctly)
 docker compose exec backend python manage.py test
 docker compose exec backend python manage.py createsuperuser
 docker compose exec backend python manage.py shell

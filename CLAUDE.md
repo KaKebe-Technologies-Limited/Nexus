@@ -57,7 +57,7 @@ erp/
 **Morning**
 ```bash
 git pull origin main
-docker-compose up
+docker compose up
 # Check #dev channel, review Miro board
 ```
 
@@ -72,7 +72,7 @@ docker-compose up
 git push
 # Update Miro status
 # Post in #dev: "Built X, stuck on Y, tomorrow Z"
-docker-compose down  # optional
+docker compose down  # optional
 ```
 
 ### Git Workflow
@@ -90,31 +90,33 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`
 
 ```bash
 # Daily
-docker-compose up              # Start all
-docker-compose up -d           # Background
-docker-compose logs -f backend # View logs
-docker-compose ps              # Check status
-docker-compose down            # Stop all
+docker compose up              # Start all
+docker compose up -d           # Background
+docker compose logs -f backend # View logs
+docker compose ps              # Check status
+docker compose down            # Stop all
 
 # After dependency changes
-docker-compose build backend
-docker-compose build frontend
+docker compose build backend
+docker compose build frontend
 
 # Django commands
-docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py makemigrations
-docker-compose exec backend python manage.py createsuperuser
-docker-compose exec backend python manage.py test
-docker-compose exec backend python manage.py shell
+docker compose exec backend python manage.py migrate_schemas  # NOT migrate (routes shared/tenant apps correctly)
+docker compose exec backend python manage.py makemigrations
+docker compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py test
+docker compose exec backend python manage.py shell
 
 # Tenant management
-docker-compose exec backend python manage.py create_tenant "Business Name" "demo.localhost"
+docker compose exec backend python manage.py create_tenant \
+  --schema_name demo --name "Demo Business" \
+  --domain-domain "localhost" --domain-is_primary True
 
 # Database access
-docker-compose exec db psql -U nexus_user -d nexus_db
+docker compose exec db psql -U nexus_user -d nexus_db
 
 # Nuclear option (deletes DB)
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
@@ -376,8 +378,8 @@ lsof -ti:8000 | xargs kill -9
 
 ### Database connection refused
 ```bash
-docker-compose ps          # Check DB running
-docker-compose restart db
+docker compose ps          # Check DB running
+docker compose restart db
 # Ensure settings.py has HOST='db' not 'localhost'
 ```
 
@@ -392,7 +394,7 @@ docker-compose restart db
 
 ### Changes not showing
 ```bash
-docker-compose build backend  # After dependency changes
+docker compose build backend  # After dependency changes
 # Code changes sync via volumes automatically
 ```
 
