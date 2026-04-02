@@ -327,3 +327,306 @@ export interface ShiftSummaryEntry {
   total_sales: number;
   total_revenue: string;
 }
+
+// ── Finance ──────────────────────────────────────────────────────────────────
+
+export interface Account {
+  id: number;
+  code: string;
+  name: string;
+  account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+  parent: number | null;
+  parent_name: string | null;
+  description: string;
+  is_active: boolean;
+  is_system: boolean;
+  outlet: number | null;
+  outlet_name: string | null;
+  children_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AccountCreate {
+  code: string;
+  name: string;
+  account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+  parent?: number;
+  description?: string;
+  is_active?: boolean;
+  outlet?: number;
+}
+
+export interface FiscalPeriod {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_closed: boolean;
+  closed_by: number | null;
+  closed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JournalEntryLine {
+  id: number;
+  account: number;
+  account_code: string;
+  account_name: string;
+  description: string;
+  debit: string;
+  credit: string;
+  outlet: number | null;
+}
+
+export interface JournalEntryLineCreate {
+  account_id: number;
+  description: string;
+  debit: string;
+  credit: string;
+  outlet_id?: number;
+}
+
+export interface JournalEntry {
+  id: number;
+  entry_number: string;
+  date: string;
+  fiscal_period: number | null;
+  fiscal_period_name: string | null;
+  description: string;
+  source: 'MANUAL' | 'SALE' | 'VOID_SALE' | 'PURCHASE' | 'PAYROLL' | 'TRANSFER';
+  reference_type: string | null;
+  reference_id: number | null;
+  status: 'DRAFT' | 'POSTED' | 'VOIDED';
+  created_by: number | null;
+  posted_by: number | null;
+  posted_at: string | null;
+  voided_by: number | null;
+  voided_at: string | null;
+  lines: JournalEntryLine[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface JournalEntryCreate {
+  date: string;
+  description: string;
+  lines: JournalEntryLineCreate[];
+}
+
+export interface TrialBalanceRow {
+  account_id: number;
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  debit: string;
+  credit: string;
+}
+
+export interface TrialBalance {
+  as_of_date: string;
+  rows: TrialBalanceRow[];
+  total_debit: string;
+  total_credit: string;
+}
+
+export interface ProfitLossAccount {
+  account_id: number;
+  account_code: string;
+  account_name: string;
+  amount: string;
+}
+
+export interface ProfitLossSection {
+  accounts: ProfitLossAccount[];
+  total: string;
+}
+
+export interface ProfitLoss {
+  date_from: string;
+  date_to: string;
+  revenue: ProfitLossSection;
+  expenses: ProfitLossSection;
+  net_income: string;
+}
+
+export interface BalanceSheetAccount {
+  account_id: number;
+  account_code: string;
+  account_name: string;
+  amount: string;
+}
+
+export interface BalanceSheetSection {
+  accounts: BalanceSheetAccount[];
+  total: string;
+}
+
+export interface BalanceSheet {
+  as_of_date: string;
+  assets: BalanceSheetSection;
+  liabilities: BalanceSheetSection;
+  equity: BalanceSheetSection;
+  total_assets: string;
+  total_liabilities_and_equity: string;
+}
+
+// ── HR ────────────────────────────────────────────────────────────────────────
+
+export interface Department {
+  id: number;
+  name: string;
+  description: string;
+  outlet: number | null;
+  outlet_name: string | null;
+  is_active: boolean;
+  employee_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Employee {
+  id: number;
+  user_id: number;
+  employee_number: string;
+  department: number | null;
+  department_name: string | null;
+  outlet: number | null;
+  outlet_name: string | null;
+  designation: string;
+  employment_type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN';
+  employment_status: 'ACTIVE' | 'ON_LEAVE' | 'SUSPENDED' | 'TERMINATED';
+  date_hired: string;
+  date_terminated: string | null;
+  basic_salary: string;
+  bank_name: string;
+  bank_account: string;
+  mobile_money_number: string;
+  nssf_number: string;
+  tin_number: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmployeeCreate {
+  user_id: number;
+  department?: number;
+  outlet?: number;
+  designation: string;
+  employment_type: 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN';
+  date_hired: string;
+  basic_salary: string;
+  bank_name?: string;
+  bank_account?: string;
+  mobile_money_number?: string;
+  nssf_number?: string;
+  tin_number?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  notes?: string;
+}
+
+export interface LeaveType {
+  id: number;
+  name: string;
+  days_per_year: number;
+  is_paid: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveBalance {
+  id: number;
+  employee: number;
+  employee_number: string;
+  leave_type: number;
+  leave_type_name: string;
+  year: number;
+  entitled_days: number;
+  used_days: number;
+  carried_over: number;
+  remaining_days: number;
+}
+
+export interface LeaveRequest {
+  id: number;
+  employee: number;
+  employee_number: string;
+  leave_type: number;
+  leave_type_name: string;
+  start_date: string;
+  end_date: string;
+  days_requested: number;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+  approved_by: number | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveRequestCreate {
+  leave_type: number;
+  start_date: string;
+  end_date: string;
+  days_requested: number;
+  reason: string;
+}
+
+export interface Attendance {
+  id: number;
+  employee: number;
+  employee_number: string;
+  date: string;
+  clock_in: string | null;
+  clock_out: string | null;
+  outlet: number | null;
+  hours_worked: number | null;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaySlipLine {
+  id: number;
+  line_type: 'EARNING' | 'DEDUCTION';
+  description: string;
+  amount: string;
+}
+
+export interface PaySlip {
+  id: number;
+  payroll_period: number;
+  employee: number;
+  employee_number: string;
+  basic_salary: string;
+  gross_pay: string;
+  total_deductions: string;
+  net_pay: string;
+  lines: PaySlipLine[];
+  created_at: string;
+}
+
+export interface PayrollPeriod {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  status: 'DRAFT' | 'PROCESSING' | 'APPROVED' | 'PAID';
+  processed_by: number | null;
+  approved_by: number | null;
+  journal_entry: number | null;
+  total_gross: string;
+  total_deductions: string;
+  total_net: string;
+  pay_slips_count: number;
+  pay_slips?: PaySlip[];
+  created_at: string;
+  updated_at: string;
+}
